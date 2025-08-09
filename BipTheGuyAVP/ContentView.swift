@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AVFAudio
+import PhotosUI
 import RealityKit
 import RealityKitContent
 
@@ -14,12 +15,14 @@ struct ContentView: View {
     
     @State private var audioPlayer: AVAudioPlayer!
     @State private var isFullSize: Bool = true
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var bipImage: Image = Image("clown")
     
     var body: some View {
         
         VStack {
             Spacer()
-            Image("clown")
+            bipImage
                 .resizable()
                 .scaledToFit()
                 .scaleEffect(isFullSize ? 1.0 : 0.9)
@@ -30,13 +33,20 @@ struct ContentView: View {
                         isFullSize.toggle()
                     }
                 }
-                
-
-            Button {
-                //TODO: Replace with photo library selection
-                playSound(soundName: "punchSound")
-            } label: {
+            
+            PhotosPicker(selection: $selectedPhoto, matching: .images, preferredItemEncoding: .automatic) {
                 Label("Photo Library", systemImage: "photo.fill.on.rectangle.fill")
+            }
+            .onChange(of: selectedPhoto) {
+                Task {
+                    guard let selectedImage = try? await
+                            selectedPhoto?.loadTransferable(type: Image.self) else {
+                        print("😡 ERROR: Could not get Image from loadTransferable")
+                        return
+                    }
+                    // Success
+                    bipImage = selectedImage
+                }
             }
             
             Spacer()
